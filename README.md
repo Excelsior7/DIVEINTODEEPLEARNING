@@ -1,2 +1,8 @@
-# DIVEINTODEEPLEARNING
-Deep Learning Course - DIVE INTO DEEP LEARNING
+### DIVE INTO DEEP LEARNING
+
+#### OPEN SOURCE BOOK :
+##### https://d2l.ai
+
+This repository gathers various implementations of deep learning algorithms.
+
+
