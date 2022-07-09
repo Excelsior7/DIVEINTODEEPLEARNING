@@ -1,7 +1,6 @@
 ```python
 import torch 
 import torch.nn as nn
-from torchsummary import summary
 ```
 
 ***
@@ -32,7 +31,7 @@ def NiNBlock(in_channels, out_channels, conv_kernel_window_size, stride, padding
 
 
 ```python
- #(out_channels, conv_kernel_window_size, stride, padding);
+#(out_channels, conv_kernel_window_size, stride, padding);
 NiN_model_arch = [(96,(11,11),1,5), (256,(5,5),1,2), (384,(3,3),1,1), (10,(3,3),1,1)];
 ```
 
@@ -77,3 +76,5 @@ for blk in net:
     Sequential output shape:	 torch.Size([5, 10, 27, 27])
     AdaptiveMaxPool2d output shape:	 torch.Size([5, 10, 1, 1])
 
+
+![png](plots/NiN_scheme.png) 
