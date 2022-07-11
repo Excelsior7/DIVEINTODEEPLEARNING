@@ -77,4 +77,4 @@ for blk in net:
     AdaptiveMaxPool2d output shape:	 torch.Size([5, 10, 1, 1])
 
 
-![png](plots/NiN_scheme.jpg) 
+![jpg](../plots/NiN_scheme.jpg) 
