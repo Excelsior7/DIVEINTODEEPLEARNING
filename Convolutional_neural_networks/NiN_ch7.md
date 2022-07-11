@@ -10,7 +10,7 @@ import torch.nn as nn
 PARAMETERS : 
 * in_channels $ \in \mathbb{N}_1 $
 * out_channels $ \in \mathbb{N}_1 $
-* conv_kernel_window_size $ \{(k_h, k_w) | k_h \in \mathbb{N}_1, k_w \in \mathbb{N}_1\} $ 
+* conv_kernel_window_size = $ \{(k_h, k_w) | k_h \in \mathbb{N}_1, k_w \in \mathbb{N}_1\} $ 
     + s.t. $k_h$, $k_w$ denote the height and the width of the kernel window respectively.
 
 ***
