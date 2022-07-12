@@ -60,28 +60,14 @@ signal less.
 
 Source : https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf
 
-
-```python
 ![png](../plots/ResNet_fig7.png)
-```
-
-    /bin/bash: -c: line 0: syntax error near unexpected token `../plots/ResNet_fig7.png'
-    /bin/bash: -c: line 0: `[png](../plots/ResNet_fig7.png)'
-
 
 Source : https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf
 
 ***
 The implementation below is intended to allow the possibility of implementing all the architectures proposed in **Table 1. Architectures for ImageNet.**
 
-
-```python
 ![png](../plots/ResNet_table1.png)
-```
-
-    /bin/bash: -c: line 0: syntax error near unexpected token `../plots/ResNet_table1.png'
-    /bin/bash: -c: line 0: `[png](../plots/ResNet_table1.png)'
-
 
 Source : https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf
 
