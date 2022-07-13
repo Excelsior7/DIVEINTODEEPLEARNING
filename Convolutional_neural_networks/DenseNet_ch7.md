@@ -171,12 +171,12 @@ def DenseNetL(num_layers, in_channels, bottleneck_layers=True, compression_facto
 
 
 ```python
-X1 = torch.rand(5,3,224,224);
-DenseNet169 = DenseNetL(169, X1.shape[1], False);
+X = torch.rand(5,3,224,224);
+DenseNet_169 = DenseNetL(169, X.shape[1], False);
 
-for blk in DenseNet169:
-    X1 = blk(X1);
-    print(blk.__class__.__name__,'output shape:\t', X1.shape);
+for blk in DenseNet_169:
+    X = blk(X);
+    print(blk.__class__.__name__,'output shape:\t', X.shape);
 ```
 
     Sequential output shape:	 torch.Size([5, 64, 56, 56])
@@ -191,16 +191,16 @@ for blk in DenseNet169:
 
 
 ***
-### DenseNet-161
+### DenseNetB-161
 
 
 ```python
-X2 = torch.rand(5,3,224,224);
-DenseNet161 = DenseNetL(161, X2.shape[1], True);
+X = torch.rand(5,3,224,224);
+DenseNetB_161 = DenseNetL(161, X.shape[1], True);
 
-for blk in DenseNet161:
-    X2 = blk(X2);
-    print(blk.__class__.__name__,'output shape:\t', X2.shape);
+for blk in DenseNetB_161:
+    X = blk(X);
+    print(blk.__class__.__name__,'output shape:\t', X.shape);
 ```
 
     Sequential output shape:	 torch.Size([5, 96, 56, 56])
@@ -211,5 +211,29 @@ for blk in DenseNet161:
     DenseBlock output shape:	 torch.Size([5, 2688, 14, 14])
     Sequential output shape:	 torch.Size([5, 2688, 7, 7])
     DenseBlock output shape:	 torch.Size([5, 3840, 7, 7])
+    Sequential output shape:	 torch.Size([5, 1000])
+
+
+***
+### DenseNetBC-161
+
+
+```python
+X = torch.rand(5,3,224,224);
+DenseNetBC_161 = DenseNetL(161, X.shape[1], True, 0.5);
+
+for blk in DenseNetBC_161:
+    X = blk(X);
+    print(blk.__class__.__name__,'output shape:\t', X.shape);
+```
+
+    Sequential output shape:	 torch.Size([5, 96, 56, 56])
+    DenseBlock output shape:	 torch.Size([5, 384, 56, 56])
+    Sequential output shape:	 torch.Size([5, 192, 28, 28])
+    DenseBlock output shape:	 torch.Size([5, 768, 28, 28])
+    Sequential output shape:	 torch.Size([5, 384, 14, 14])
+    DenseBlock output shape:	 torch.Size([5, 2112, 14, 14])
+    Sequential output shape:	 torch.Size([5, 1056, 7, 7])
+    DenseBlock output shape:	 torch.Size([5, 2208, 7, 7])
     Sequential output shape:	 torch.Size([5, 1000])
 
