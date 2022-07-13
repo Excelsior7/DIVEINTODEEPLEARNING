@@ -179,6 +179,12 @@ def ResNetL(num_layers, in_channels):
 
 
 ```python
+# X = (5,3,224,224);
+# => in_channels = 3;
+```
+
+
+```python
 num_layers_net34 = 34;
 num_out_channels_net34 = 512;
 
@@ -207,6 +213,12 @@ for blk in ResNet34:
 
 
 ### *ResNet-101*
+
+
+```python
+# X = (5,3,224,224);
+# => in_channels = 3;
+```
 
 
 ```python
