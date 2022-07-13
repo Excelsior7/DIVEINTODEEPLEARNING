@@ -13,6 +13,7 @@ import numpy as np
 
 Source : https://openaccess.thecvf.com/content_cvpr_2017/papers/Huang_Densely_Connected_Convolutional_CVPR_2017_paper.pdf
 
+***
 Motivation of Dense Net :
 
 **1.Introduction**
@@ -30,6 +31,7 @@ layers.
 
 Source : https://openaccess.thecvf.com/content_cvpr_2017/papers/Huang_Densely_Connected_Convolutional_CVPR_2017_paper.pdf
 
+***
 **Parameters efficiency of Dense Net:**
     
 A possibly counter-intuitive effect of this dense connectivity pattern is that it requires fewer parameters than traditional convolutional networks, as there is no need to relearn redundant feature-maps.
