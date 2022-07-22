@@ -14,9 +14,14 @@ import matplotlib.pyplot as plt
 
 
 ```python
-x = torch.arange(0,2500);
-data = torch.cos(x * 0.02) * torch.sin(x * 0.01);
-data += torch.distributions.normal.Normal(0,0.1).sample((2500,));
+num_data = 200;
+
+x = torch.arange(0,num_data, dtype=torch.float32);
+
+B_0, B_1 = 5, 7;
+
+data = B_0 + B_1*x;
+data += torch.distributions.normal.Normal(0,10).sample((num_data,));
 ```
 
 
@@ -28,6 +33,23 @@ ax1.plot(x, data);
 
     
 ![png](../plots/RNN_fig1.png)
+    
+
+
+
+```python
+data_trans = data[1:] - data[:-1];
+```
+
+
+```python
+fig_t, ax_t = plt.subplots();
+ax_t.plot(x[0:num_data-1], data_trans);
+```
+
+
+    
+![png](../plots/RNN_fig2.png)
     
 
 
@@ -59,10 +81,10 @@ def XYdataLoader(input_data_1d, sequence_len, batch_size):
 
 
 ```python
-batch_size = 100;
-sequence_len = 600;
+batch_size = 19;
+sequence_len = 9;
 
-dataset = XYdataLoader(data, sequence_len, batch_size);
+dataset = XYdataLoader(data_trans, sequence_len, batch_size);
 ```
 
 ***
@@ -187,28 +209,36 @@ def trainRNN(rnn, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
 
 
 ```python
-rnn = RNN(batch_size, 8, 1);
-optimizer = torch.optim.SGD(rnn.parameters(), lr=0.03);
+rnn = RNN(batch_size, 32, 1);
 ```
 
 
 ```python
-rnn_trained = trainRNN(rnn, dataset, loss, optimizer, 250, batch_size);
+optimizer = torch.optim.SGD(rnn.parameters(), lr=0.01);
 ```
 
-    Training loss 0.45660316944122314
+
+```python
+rnn_trained = trainRNN(rnn, dataset, loss, optimizer, 1000, batch_size);
+```
+
+    Training loss 237.73231506347656
     Epoch 0
-    Training loss 0.3369460999965668
+    Training loss 271.89312744140625
     Epoch 1
-    Training loss 0.3097529113292694
+    Training loss 225.37205505371094
     Epoch 2
+    Training loss 234.2942657470703
+    Epoch 3
     ...
-    Training loss 0.22583262622356415
-    Epoch 247
-    Training loss 0.2208634614944458
-    Epoch 248
-    Training loss 0.2216733694076538
-    Epoch 249
+    Training loss 115.64496612548828
+    Epoch 996
+    Training loss 123.0284652709961
+    Epoch 997
+    Training loss 133.09402465820312
+    Epoch 998
+    Training loss 118.36428833007812
+    Epoch 999
 
 
 ***
@@ -243,19 +273,34 @@ Y_hat.shape
 
 
 
-    torch.Size([1900])
+    torch.Size([190])
 
 
 
 
 ```python
 fig2, ax2 = plt.subplots();
-ax2.plot(x[sequence_len:2500], data[sequence_len:2500]);
-ax2.plot(torch.arange(sequence_len,2500), Y_hat.detach().numpy(), color="r");
+ax2.plot(x[0:num_data-1], data_trans);
+ax2.plot(torch.arange(sequence_len,num_data-1), Y_hat.detach().numpy(), color="r");
 ```
 
 
     
-![png](../plots/RNN_fig2.png)
+![png](../plots/RNN_fig3.png)
+    
+
+
+
+```python
+data_approx = Y_hat + data[sequence_len:-1];
+
+fig3, ax3 = plt.subplots();
+ax3.plot(x, data);
+ax3.plot(torch.arange(sequence_len,num_data-1), data_approx.detach().numpy(), color="r");
+```
+
+
+    
+![png](../plots/RNN_fig4.png)
     
 
