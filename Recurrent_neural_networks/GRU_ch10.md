@@ -70,21 +70,22 @@ def sequencesPreparation(input_data_1d, sequence_len):
 
 
 ```python
-def XYdataLoader(input_data_1d, sequence_len, batch_size):
+def XYdataLoader(input_data_1d, sequence_len, batch_size, shuffle):
     
     X,Y = sequencesPreparation(input_data_1d, sequence_len);
 
     dataset = torch.utils.data.TensorDataset(X,Y);
     
-    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=True, num_workers=2);
+    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=shuffle, num_workers=2);
 ```
 
 
 ```python
-sequence_len = 5;
+sequence_len = 19;
 batch_size = (num_data-1)-sequence_len;
 
-dataset = XYdataLoader(data_trans, sequence_len, batch_size);
+dataset = XYdataLoader(data_trans, sequence_len, batch_size, True);
+dataset_approx = XYdataLoader(data_trans, sequence_len, batch_size, False);
 ```
 
 ***
@@ -103,22 +104,22 @@ class GRU(nn.Module):
         super().__init__();
         
         ## RESET GATE PARAMETERS 
-        self.W_xr = nn.Parameter(torch.randn(x_size, h_size));
-        self.W_hr = nn.Parameter(torch.randn(h_size, h_size));
+        self.W_xr = nn.Parameter(2*torch.rand(x_size, h_size)-1);
+        self.W_hr = nn.Parameter(2*torch.rand(h_size, h_size)-1);
         self.b_r = nn.Parameter(torch.zeros((1,h_size)));
         
         ## UPDATE GATE PARAMETERS 
-        self.W_xz = nn.Parameter(torch.randn(x_size, h_size));
-        self.W_hz = nn.Parameter(torch.randn(h_size, h_size));
+        self.W_xz = nn.Parameter(2*torch.rand(x_size, h_size)-1);
+        self.W_hz = nn.Parameter(2*torch.rand(h_size, h_size)-1);
         self.b_z = nn.Parameter(torch.zeros((1,h_size)));
         
         ## H_tilde PARAMETERS
-        self.W_xh = nn.Parameter(torch.randn(x_size, h_size));
-        self.W_hh = nn.Parameter(torch.randn(h_size, h_size));
+        self.W_xh = nn.Parameter(2*torch.rand(x_size, h_size)-1);
+        self.W_hh = nn.Parameter(2*torch.rand(h_size, h_size)-1);
         self.b_h = nn.Parameter(torch.zeros((1,h_size)));
         
         ## OUTPUT PARAMETERS
-        self.W_hq = nn.Parameter(torch.randn(h_size, q_size));
+        self.W_hq = nn.Parameter(2*torch.rand(h_size, q_size)-1);
         self.b_q = nn.Parameter(torch.zeros((1,q_size)));
 
     def forward(self, X):
@@ -199,7 +200,7 @@ def gradientClipping(gru, alpha=1):
 
 
 ```python
-def trainGRU(gru, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
+def trainGRU(gru, dataset, loss, optimizer, num_epochs, alpha=1):
     
     gru.train();
     
@@ -207,20 +208,18 @@ def trainGRU(gru, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
         X_test, Y_test = None, None;
 
         for X,Y in dataset:
-                
-            if len(X) == batch_size:
-                X = XTransform(X);
-                Y = YTransform(Y);            
-                l = loss(gru(X), Y);
-                
-                with torch.no_grad():
-                    l.backward();
-#                     gradientClipping(gru, alpha);
-                    optimizer.step();
-                    optimizer.zero_grad();
-                    
-                if X_test == None and Y_test == None:
-                    X_test, Y_test = X, Y;
+            X = XTransform(X);
+            Y = YTransform(Y);            
+            l = loss(gru(X), Y);
+
+            with torch.no_grad():
+                l.backward();
+#                 gradientClipping(gru, alpha);
+                optimizer.step();
+                optimizer.zero_grad();
+
+            if X_test == None and Y_test == None:
+                X_test, Y_test = X, Y;
             
         print(f'Training loss {loss(gru(X_test), Y_test)}');
         print(f'Epoch {epoch}');                        
@@ -230,7 +229,7 @@ def trainGRU(gru, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
 
 
 ```python
-gru = GRU(1, 10, 1);
+gru = GRU(1, 16, 1);
 ```
 
 
@@ -240,26 +239,26 @@ optimizer = torch.optim.SGD(gru.parameters(), lr=0.003);
 
 
 ```python
-gru_trained = trainGRU(gru, dataset, loss, optimizer, 50000, batch_size);
+gru_trained = trainGRU(gru, dataset, loss, optimizer, 5000);
 ```
 
-    Training loss 264.305419921875
+    Training loss 252.34649658203125
     Epoch 0
-    Training loss 261.0648498535156
+    Training loss 237.70933532714844
     Epoch 1
-    Training loss 257.9518127441406
+    Training loss 230.74887084960938
     Epoch 2
-    Training loss 254.71694946289062
+    Training loss 226.0172576904297
     Epoch 3
     ...
-    Training loss 133.21107482910156
-    Epoch 49996
-    Training loss 133.21495056152344
-    Epoch 49997
-    Training loss 133.21029663085938
-    Epoch 49998
-    Training loss 133.21414184570312
-    Epoch 49999
+    Training loss 136.90711975097656
+    Epoch 4996
+    Training loss 136.98568725585938
+    Epoch 4997
+    Training loss 136.9063720703125
+    Epoch 4998
+    Training loss 136.9849853515625
+    Epoch 4999
 
 
 ***
@@ -267,12 +266,13 @@ gru_trained = trainGRU(gru, dataset, loss, optimizer, 50000, batch_size);
 
 
 ```python
-def GRUapproximation(gru, dataset, batch_size):
+def GRUapproximation(gru, dataset):
     
-    Y_hat = None;
+    gru.eval();
+    with torch.no_grad():
+        Y_hat = None;
 
-    for X,Y in dataset:
-        if len(X) == batch_size:
+        for X,Y in dataset:
             X = XTransform(X);
             Y_hat_batch = gru(X);
 
@@ -286,7 +286,7 @@ def GRUapproximation(gru, dataset, batch_size):
 
 
 ```python
-Y_hat = GRUapproximation(gru, dataset, batch_size);
+Y_hat = GRUapproximation(gru, dataset_approx);
 Y_hat = Y_hat.flatten();
 Y_hat.shape
 ```
@@ -294,7 +294,7 @@ Y_hat.shape
 
 
 
-    torch.Size([194])
+    torch.Size([180])
 
 
 
@@ -313,9 +313,9 @@ ax2.plot(torch.arange(sequence_len,num_data-1), Y_hat.detach().numpy(), color="r
 
 
 ```python
-fig__, ax__ = plt.subplots();
-ax__.plot(x[75:125], data_trans[75:125]);
-ax__.plot(torch.arange(75,125), Y_hat.detach().numpy()[75-sequence_len:125-sequence_len], color="r");
+fig_zoom, ax_zoom = plt.subplots();
+ax_zoom.plot(x[75:125], data_trans[75:125]);
+ax_zoom.plot(torch.arange(75,125), Y_hat.detach().numpy()[75-sequence_len:125-sequence_len], color="r");
 ```
 
 
