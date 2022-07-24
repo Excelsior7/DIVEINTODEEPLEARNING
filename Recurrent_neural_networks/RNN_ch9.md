@@ -32,7 +32,7 @@ ax1.plot(x, data);
 
 
     
-![png](../plots/RNN_fig1.png)
+![png](../plots/RNN_fig1.png);
     
 
 
@@ -70,21 +70,22 @@ def sequencesPreparation(input_data_1d, sequence_len):
 
 
 ```python
-def XYdataLoader(input_data_1d, sequence_len, batch_size):
+def XYdataLoader(input_data_1d, sequence_len, batch_size, shuffle):
     
     X,Y = sequencesPreparation(input_data_1d, sequence_len);
 
     dataset = torch.utils.data.TensorDataset(X,Y);
     
-    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=True, num_workers=2);
+    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=shuffle, num_workers=2);
 ```
 
 
 ```python
-batch_size = 19;
-sequence_len = 9;
+sequence_len = 19;
+batch_size = (num_data-1)-sequence_len;
 
-dataset = XYdataLoader(data_trans, sequence_len, batch_size);
+dataset = XYdataLoader(data_trans, sequence_len, batch_size, True);
+dataset_approx = XYdataLoader(data_trans, sequence_len, batch_size, False);
 ```
 
 ***
@@ -115,9 +116,9 @@ class RNN(nn.Module):
         
         for t in range(len(X)):
             if t == 0:
-                H_t = torch.tanh(X[t] * self.W_xh + self.b_h);
+                H_t = torch.tanh(torch.matmul(X[t],self.W_xh) + self.b_h);
             else:
-                H_t = torch.tanh(X[t] * self.W_xh + torch.matmul(H_t, self.W_hh) + self.b_h);
+                H_t = torch.tanh(torch.matmul(X[t],self.W_xh) + torch.matmul(H_t, self.W_hh) + self.b_h);
 
             outputs.append(torch.matmul(H_t, self.W_hq) + self.b_q);
             
@@ -178,7 +179,7 @@ def gradientClipping(rnn, alpha=1):
 
 
 ```python
-def trainRNN(rnn, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
+def trainRNN(rnn, dataset, loss, optimizer, num_epochs, alpha=1):
     
     rnn.train();
     
@@ -186,20 +187,18 @@ def trainRNN(rnn, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
         X_test, Y_test = None, None;
 
         for X,Y in dataset:
-                
-            if len(X) == batch_size:
-                X = XTransform(X);
-                Y = YTransform(Y);            
-                l = loss(rnn(X), Y);
-                
-                with torch.no_grad():
-                    l.backward();
-                    gradientClipping(rnn, alpha);
-                    optimizer.step();
-                    optimizer.zero_grad();
-                    
-                if X_test == None and Y_test == None:
-                    X_test, Y_test = X, Y;
+            X = XTransform(X);
+            Y = YTransform(Y);            
+            l = loss(rnn(X), Y);
+
+            with torch.no_grad():
+                l.backward();
+                gradientClipping(rnn, alpha);
+                optimizer.step();
+                optimizer.zero_grad();
+
+            if X_test == None and Y_test == None:
+                X_test, Y_test = X, Y;
             
         print(f'Training loss {loss(rnn(X_test), Y_test)}');
         print(f'Epoch {epoch}');                        
@@ -209,36 +208,36 @@ def trainRNN(rnn, dataset, loss, optimizer, num_epochs, batch_size, alpha=1):
 
 
 ```python
-rnn = RNN(batch_size, 32, 1);
+rnn = RNN(1, 32, 1);
 ```
 
 
 ```python
-optimizer = torch.optim.SGD(rnn.parameters(), lr=0.01);
+optimizer = torch.optim.SGD(rnn.parameters(), lr=0.003);
 ```
 
 
 ```python
-rnn_trained = trainRNN(rnn, dataset, loss, optimizer, 1000, batch_size);
+rnn_trained = trainRNN(rnn, dataset, loss, optimizer, 5000);
 ```
 
-    Training loss 237.73231506347656
+    Training loss 230.382568359375
     Epoch 0
-    Training loss 271.89312744140625
+    Training loss 223.46714782714844
     Epoch 1
-    Training loss 225.37205505371094
+    Training loss 219.18490600585938
     Epoch 2
-    Training loss 234.2942657470703
+    Training loss 215.7847900390625
     Epoch 3
-    ...
-    Training loss 115.64496612548828
-    Epoch 996
-    Training loss 123.0284652709961
-    Epoch 997
-    Training loss 133.09402465820312
-    Epoch 998
-    Training loss 118.36428833007812
-    Epoch 999
+    ...    
+    Training loss 32.84019470214844
+    Epoch 4996
+    Training loss 32.96391296386719
+    Epoch 4997
+    Training loss 32.80417251586914
+    Epoch 4998
+    Training loss 32.08708953857422
+    Epoch 4999
 
 
 ***
@@ -246,12 +245,13 @@ rnn_trained = trainRNN(rnn, dataset, loss, optimizer, 1000, batch_size);
 
 
 ```python
-def RNNapproximation(rnn, dataset, batch_size):
+def RNNapproximation(rnn, dataset):
     
-    Y_hat = None;
+    rnn.eval();
+    with torch.no_grad():
+        Y_hat = None;
 
-    for X,Y in dataset:
-        if len(X) == batch_size:
+        for X,Y in dataset:
             X = XTransform(X);
             Y_hat_batch = rnn(X);
 
@@ -265,7 +265,7 @@ def RNNapproximation(rnn, dataset, batch_size):
 
 
 ```python
-Y_hat = RNNapproximation(rnn, dataset, batch_size);
+Y_hat = RNNapproximation(rnn, dataset_approx);
 Y_hat = Y_hat.flatten();
 Y_hat.shape
 ```
@@ -273,7 +273,7 @@ Y_hat.shape
 
 
 
-    torch.Size([190])
+    torch.Size([180])
 
 
 
@@ -292,6 +292,19 @@ ax2.plot(torch.arange(sequence_len,num_data-1), Y_hat.detach().numpy(), color="r
 
 
 ```python
+fig_zoom, ax_zoom = plt.subplots();
+ax_zoom.plot(x[75:125], data_trans[75:125]);
+ax_zoom.plot(torch.arange(75,125), Y_hat.detach().numpy()[75-sequence_len:125-sequence_len], color="r");
+```
+
+
+    
+![png](../plots/RNN_fig4.png)
+    
+
+
+
+```python
 data_approx = Y_hat + data[sequence_len:-1];
 
 fig3, ax3 = plt.subplots();
@@ -301,6 +314,6 @@ ax3.plot(torch.arange(sequence_len,num_data-1), data_approx.detach().numpy(), co
 
 
     
-![png](../plots/RNN_fig4.png)
+![png](../plots/RNN_fig5.png)
     
 
