@@ -286,7 +286,7 @@ def GRUapproximation(gru, dataset):
 
 
 ```python
-Y_hat = GRUapproximation(gru, dataset_approx);
+Y_hat = GRUapproximation(gru_trained, dataset_approx);
 Y_hat = Y_hat.flatten();
 Y_hat.shape
 ```

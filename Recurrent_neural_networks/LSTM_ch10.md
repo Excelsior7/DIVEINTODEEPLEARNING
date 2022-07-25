@@ -292,7 +292,7 @@ def LSTMapproximation(lstm, dataset):
 
 
 ```python
-Y_hat = LSTMapproximation(lstm, dataset_approx);
+Y_hat = LSTMapproximation(lstm_trained, dataset_approx);
 Y_hat = Y_hat.flatten();
 Y_hat.shape
 ```
@@ -379,7 +379,7 @@ init_seq = XTransform(init_seq);
 
 ```python
 num_extra_points = 5;
-extra_preds = extrapolation(lstm, init_seq, num_extra_points);
+extra_preds = extrapolation(lstm_trained, init_seq, num_extra_points);
 ```
 
 

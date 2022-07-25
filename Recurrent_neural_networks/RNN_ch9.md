@@ -265,7 +265,7 @@ def RNNapproximation(rnn, dataset):
 
 
 ```python
-Y_hat = RNNapproximation(rnn, dataset_approx);
+Y_hat = RNNapproximation(rnn_trained, dataset_approx);
 Y_hat = Y_hat.flatten();
 Y_hat.shape
 ```
