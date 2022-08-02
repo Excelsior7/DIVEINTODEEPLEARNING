@@ -10,8 +10,6 @@ import copy
 ### ENCODER-DECODER IMPLEMENTATION FROM SCRATCH ON THE MACHINE TRANSLATION PROBLEM
 ***
 
-The model has been trained on an EC2 instance: c6a.4xlarge.
-
 ### *DATA*
 
 Source : http://www.manythings.org/anki/
@@ -22,7 +20,7 @@ ENGLISH_PART \t FRENCH_PART \t REFERENCES_PART
 
 
 ```python
-with open("en_fra.txt") as f:
+with open("../data/en_fra.txt") as f:
     examples = f.readlines();
 ```
 
@@ -177,7 +175,7 @@ def datasets(source_examples, target_examples, dataset_train_size, dataset_test_
     source_examples = copy.deepcopy(source_examples);
     target_examples = copy.deepcopy(target_examples);
     
-    ## The document provides examples in ascending order of the number of tokens.
+    ## The document "en_fra.txt" provides examples in ascending order of the number of tokens.
     ## So before delineating my training/test datasets, randomize the order of the examples,
     ## in order to maximize the heterogeneity in both.
     random_indexation = torch.randperm(dataset_train_size + dataset_test_size);
@@ -186,7 +184,13 @@ def datasets(source_examples, target_examples, dataset_train_size, dataset_test_
     source_examples = [source_examples[random_indexation[i]] for i in range(len(random_indexation))];
     target_examples = target_examples[0:dataset_train_size+dataset_test_size];
     target_examples = [target_examples[random_indexation[i]] for i in range(len(random_indexation))];
-
+    
+    ## source_seq_len[i] = the number of tokens of sequence i (before padding).
+    ## The importance of these quantities lies in the calculation of the context variable C in the encoder.
+    source_seq_len = sequencesLen(source_examples);
+    source_seq_len_train = source_seq_len[0:dataset_train_size];
+    source_seq_len_test = source_seq_len[dataset_train_size:dataset_train_size+dataset_test_size];
+    
     source_examples = padding(source_examples);
     target_examples = padding(target_examples);
 
@@ -198,12 +202,12 @@ def datasets(source_examples, target_examples, dataset_train_size, dataset_test_
     ds_src_train = source_examples[0:dataset_train_size];
     ds_trg_train_in = target_examples[0:dataset_train_size][:,:-1];
     ds_trg_train_out = target_examples[0:dataset_train_size][:,1:];
-    datasets_train = dataLoader(batch_size_train, True, ds_src_train, ds_trg_train_in, ds_trg_train_out); 
+    datasets_train = dataLoader(batch_size_train, True, ds_src_train, source_seq_len_train, 
+                                ds_trg_train_in, ds_trg_train_out); 
     
     ds_src_test = source_examples[dataset_train_size:dataset_train_size+dataset_test_size];
     ds_trg_test_out = target_examples[dataset_train_size:dataset_train_size+dataset_test_size][:,1:];
-    datasets_test = dataLoader(batch_size_test, False, ds_src_test, ds_trg_test_out);
-    
+    datasets_test = dataLoader(batch_size_test, False, ds_src_test, source_seq_len_test, ds_trg_test_out);
     
     return datasets_train, datasets_test, source_vocab, target_vocab;
 ```
@@ -245,9 +249,21 @@ def padding(dataset_examples):
 
 
 ```python
-dataset_train_size = 2000;
+def sequencesLen(dataset_examples):
+    
+    sequences_len = [];
+    
+    for i in range(len(dataset_examples)):
+        sequences_len.append(len(dataset_examples[i]));
+        
+    return torch.tensor(sequences_len);
+```
+
+
+```python
+dataset_train_size = 250;
 dataset_test_size = 50;
-batch_size_train = 2000;
+batch_size_train = 250;
 batch_size_test = 10;
 
 datasets_train, datasets_test, source_vocab, target_vocab = datasets(en_examples, 
@@ -266,7 +282,7 @@ len(source_vocab), len(target_vocab)
 
 
 
-    (559, 1188)
+    (86, 242)
 
 
 
@@ -291,9 +307,13 @@ class Encoder(nn.Module):
         print("(Whi|Whf|Whg|Who) dimensions : ", (hidden_size, hidden_size));
         print("----------------------------------");
     
-    def contextVariable(self, H):
-        C = H[-1];
+    def contextVariable(self, H, source_seq_len):
         
+        C = torch.empty_like(H[0]);
+        
+        for i in range(len(source_seq_len)):
+            C[i] = H[source_seq_len[i]-1][i];
+
         return C;
         
     def forward(self, src_X):
@@ -341,19 +361,19 @@ class EncoderDecoder(nn.Module):
         self.encoder = encoder;
         self.decoder = decoder;
         
-    def forward(self, src_X, bos_X):
+    def forward(self, src_X, bos_X, source_seq_len):
         
         H, hc = self.encoder(src_X);
-        Y_hat = self.decoder(bos_X, self.encoder.contextVariable(H));
+        Y_hat = self.decoder(bos_X, self.encoder.contextVariable(H, source_seq_len));
         
         return Y_hat;
 ```
 
 
 ```python
-input_size = 256;
-hidden_size = 256;
-num_layers = 2;
+input_size = 16;
+hidden_size = 16;
+num_layers = 1;
 source_vocab_size = len(source_vocab);
 target_vocab_size = len(target_vocab);
 
@@ -363,63 +383,29 @@ model = EncoderDecoder(encoder, decoder);
 ```
 
     ----ENCODER WEIGHTS PARAMATERS----
-    (Wii|Wif|Wig|Wio) dimensions :  (256, 256)
-    (Whi|Whf|Whg|Who) dimensions :  (256, 256)
+    (Wii|Wif|Wig|Wio) dimensions :  (16, 16)
+    (Whi|Whf|Whg|Who) dimensions :  (16, 16)
     ----------------------------------
     ----DECODER WEIGHTS PARAMATERS----
-    (Wii|Wif|Wig|Wio) dimensions :  (512, 256)
-    (Whi|Whf|Whg|Who) dimensions :  (256, 256)
+    (Wii|Wif|Wig|Wio) dimensions :  (32, 16)
+    (Whi|Whf|Whg|Who) dimensions :  (16, 16)
     ----------------------------------
-
-
-    /home/excelsior/anaconda3/envs/d2l/lib/python3.8/site-packages/torch/nn/modules/lazy.py:178: UserWarning: Lazy modules are a new feature under heavy development so changes to the API or functionality can happen at any moment.
-      warnings.warn('Lazy modules are a new feature under heavy development '
 
 
 
 ```python
 def loadModel(model, load_model=False):
     if load_model:
-        model.load_state_dict(torch.load('./lstm_parameters_machineTr_ch10.pt'));
+        model.load_state_dict(torch.load('../data/lstm_parameters_machineTr_ch10.pt'));
 ```
 
 
 ```python
-loadModel(model, True);
+loadModel(model, False);
 ```
 
 ***
 ### *LOSS*
-
-
-```python
-CEL = nn.CrossEntropyLoss();
-```
-
-
-```python
-def loss(Y_hat, Y, pad_idx):
-    Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]);
-    Y = Y.flatten();
-    
-    is_not_pad = (Y != pad_idx).flatten();
-    
-    Y_hat = Y_hat[is_not_pad];
-    Y = Y[is_not_pad];
-
-    return CEL(Y_hat, Y);
-```
-
-***
-### *OPTIMIZER*
-
-
-```python
-optimizer = torch.optim.SGD(model.parameters(), lr=0.3);
-```
-
-***
-### *TRAINING*
 
 
 ```python
@@ -436,12 +422,43 @@ pad_idx
 
 
 ```python
+CEL = nn.CrossEntropyLoss();
+```
+
+
+```python
+def loss(Y_hat, Y, pad_idx):
+    Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]);
+    Y = Y.flatten();
+    
+    is_not_pad = Y != pad_idx;
+    
+    Y_hat = Y_hat[is_not_pad];
+    Y = Y[is_not_pad];
+
+    return CEL(Y_hat, Y);
+```
+
+***
+### *OPTIMIZER*
+
+
+```python
+optimizer = torch.optim.Adam(model.parameters(), lr=0.003);
+```
+
+***
+### *TRAINING*
+
+
+```python
 def train(model,datasets,loss,optimizer,num_epochs,save_params=False):
     
     model.train();
     for epoch in range(num_epochs):
-        for src_X, bos_X, Y in datasets:
-            l = loss(model(src_X, bos_X), Y, pad_idx);
+        for src_X, source_seq_len_train, bos_X, Y in datasets:
+            
+            l = loss(model(src_X, bos_X, source_seq_len_train), Y, pad_idx);
 
             with torch.no_grad():
                 l.backward();
@@ -451,12 +468,12 @@ def train(model,datasets,loss,optimizer,num_epochs,save_params=False):
         print(f'Epoch {epoch} - Training loss {l}');
     
     if save_params:
-        torch.save(model.state_dict(), './lstm_parameters_machineTr_ch10.pt');
+        torch.save(model.state_dict(), '../data/lstm_parameters_machineTr_ch10.pt');
 ```
 
 
 ```python
-# train(model, datasets_train, loss, optimizer, 10, False);
+train(model, datasets_train, loss, optimizer, 0, True);
 ```
 
 ***
@@ -495,12 +512,12 @@ def prediction(model,datasets,bos_idx,eos_idx,source_vocab,target_vocab):
     preds_outputs_src = [];
     preds_outputs_y = [];
     
-    src_X, Y = next(iter(datasets_test));    
+    src_X, source_seq_len_test, Y = next(iter(datasets_test));    
     bos_X = torch.empty((len(src_X),1)).fill_(bos_idx).type(torch.int32);
     
     while(len(src_X) > 0):
 
-        Y_hat = torch.transpose(model(src_X, bos_X),0,1)[-1];
+        Y_hat = torch.transpose(model(src_X, bos_X, source_seq_len_test),0,1)[-1];
         preds = torch.argmax(Y_hat,dim=-1,keepdim=True);
 
         bos_X = torch.cat((bos_X,preds),dim=-1);
@@ -519,6 +536,7 @@ def prediction(model,datasets,bos_idx,eos_idx,source_vocab,target_vocab):
         ## Delete terminated predictions.
         src_X = src_X[~preds_is_eos];
         bos_X = bos_X[~preds_is_eos];
+        source_seq_len_test = source_seq_len_test[~preds_is_eos];
          
     return preds_outputs_src, preds_outputs_y;
 ```
@@ -536,34 +554,34 @@ for x, y in zip(out_src, out_y):
     print("******");
 ```
 
-    src =>  ['take', 'mine', '.', '<eos>', '<pad>', '<pad>']
-    pred =>  ['<bos>', 'soyez', 'vas', '!', '<eos>']
+    src =>  ['get', 'out', '.', '<eos>']
+    pred =>  ['<bos>', 'sois', 'détendu', '!', '<eos>']
     ******
-    src =>  ['get', 'away', '!', '<eos>', '<pad>', '<pad>']
-    pred =>  ['<bos>', 'soyez', 'vas', '!', '<eos>']
+    src =>  ['get', 'out', '.', '<eos>']
+    pred =>  ['<bos>', 'sois', 'détendu', '!', '<eos>']
     ******
-    src =>  ['they', 'lost', '.', '<eos>', '<pad>', '<pad>']
-    pred =>  ['<bos>', "c'est", 'la', 'mal', '.', '<eos>']
+    src =>  ['get', 'up', '.', '<eos>']
+    pred =>  ['<bos>', 'je', 'tricote', '.', '<eos>']
     ******
-    src =>  ['i', 'see', 'tom', '.', '<eos>', '<pad>']
-    pred =>  ['<bos>', 'je', 'suis', 'tom', '.', '<eos>']
+    src =>  ['go', 'away', '!', '<eos>']
+    pred =>  ['<bos>', "j'ai", 'perdu', '.', '<eos>']
     ******
-    src =>  ['i', 'am', 'cold', '.', '<eos>', '<pad>']
-    pred =>  ['<bos>', 'je', 'suis', 'tom', '.', '<eos>']
+    src =>  ['hide', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'sois', 'sincère', '.', '<eos>']
     ******
-    src =>  ['i', 'must', 'go', '.', '<eos>', '<pad>']
-    pred =>  ['<bos>', 'je', 'vous', 'en', 'essaye', '.', '<eos>']
+    src =>  ['go', 'away', '!', '<eos>']
+    pred =>  ['<bos>', "j'ai", 'perdu', '.', '<eos>']
     ******
-    src =>  ['get', 'out', '!', '<eos>', '<pad>', '<pad>']
-    pred =>  ['<bos>', 'à', 'la', 'sommes', 'as', '!', '<eos>']
+    src =>  ['run', '!', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'je', 'tricote', '.', '<eos>']
     ******
-    src =>  ["i'm", 'quiet', '.', '<eos>', '<pad>', '<pad>']
-    pred =>  ['<bos>', 'je', 'suis', 'en', 'essaye', '.', '<eos>']
+    src =>  ['no', 'way', '!', '<eos>']
+    pred =>  ['<bos>', 'je', 'tricote', '.', '<eos>']
     ******
-    src =>  ["i'm", 'hit', '!', '<eos>', '<pad>', '<pad>']
-    pred =>  ['<bos>', 'je', 'suis', 'en', 'je', 'suis', '.', '<eos>']
+    src =>  ['be', 'fair', '.', '<eos>']
+    pred =>  ['<bos>', 'sois', 'sincère', '.', '<eos>']
     ******
-    src =>  ['relax', '.', '<eos>', '<pad>', '<pad>', '<pad>']
-    pred =>  ['<bos>', 'tom', 'est', 'en', 'sors', 'de', 'sors', '.', '<eos>']
+    src =>  ['come', 'on', '.', '<eos>']
+    pred =>  ['<bos>', 'sois', 'sincère', '.', '<eos>']
     ******
 
