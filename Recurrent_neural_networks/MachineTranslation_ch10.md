@@ -273,6 +273,7 @@ len(source_vocab), len(target_vocab)
 ***
 ### ENCODER-DECODER MODEL
 
+![jpg](../plots/context_variable_mt_ch10.jpg)
 
 ```python
 class Encoder(nn.Module):
