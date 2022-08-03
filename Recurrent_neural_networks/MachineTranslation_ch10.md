@@ -261,9 +261,9 @@ def sequencesLen(dataset_examples):
 
 
 ```python
-dataset_train_size = 250;
+dataset_train_size = 750;
 dataset_test_size = 50;
-batch_size_train = 250;
+batch_size_train = 750;
 batch_size_test = 10;
 
 datasets_train, datasets_test, source_vocab, target_vocab = datasets(en_examples, 
@@ -282,7 +282,7 @@ len(source_vocab), len(target_vocab)
 
 
 
-    (86, 242)
+    (249, 578)
 
 
 
@@ -392,6 +392,10 @@ model = EncoderDecoder(encoder, decoder);
     ----------------------------------
 
 
+    /home/excelsior/anaconda3/envs/d2l/lib/python3.8/site-packages/torch/nn/modules/lazy.py:178: UserWarning: Lazy modules are a new feature under heavy development so changes to the API or functionality can happen at any moment.
+      warnings.warn('Lazy modules are a new feature under heavy development '
+
+
 
 ```python
 def loadModel(model, load_model=False):
@@ -473,8 +477,11 @@ def train(model,datasets,loss,optimizer,num_epochs,save_params=False):
 
 
 ```python
-train(model, datasets_train, loss, optimizer, 0, True);
+train(model, datasets_train, loss, optimizer, 1, True);
 ```
+
+    Epoch 0 - Training loss 0.8236297965049744
+
 
 ***
 ### *PREDICTION*
@@ -554,34 +561,34 @@ for x, y in zip(out_src, out_y):
     print("******");
 ```
 
-    src =>  ['get', 'out', '.', '<eos>']
-    pred =>  ['<bos>', 'sois', 'détendu', '!', '<eos>']
+    src =>  ['good', 'job', '!', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'nickel', '!', '<eos>']
     ******
-    src =>  ['get', 'out', '.', '<eos>']
-    pred =>  ['<bos>', 'sois', 'détendu', '!', '<eos>']
+    src =>  ['you', 'run', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'pars', '.', '<eos>']
     ******
-    src =>  ['get', 'up', '.', '<eos>']
-    pred =>  ['<bos>', 'je', 'tricote', '.', '<eos>']
+    src =>  ['open', 'it', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'va', '!', '<eos>']
     ******
-    src =>  ['go', 'away', '!', '<eos>']
-    pred =>  ['<bos>', "j'ai", 'perdu', '.', '<eos>']
+    src =>  ['get', 'out', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'pars', '.', '<eos>']
     ******
-    src =>  ['hide', '.', '<eos>', '<pad>']
-    pred =>  ['<bos>', 'sois', 'sincère', '.', '<eos>']
+    src =>  ['move', 'on', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'soyez', 'calmes', '!', '<eos>']
     ******
-    src =>  ['go', 'away', '!', '<eos>']
-    pred =>  ['<bos>', "j'ai", 'perdu', '.', '<eos>']
+    src =>  ["i'm", 'cold', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'je', "l'utilise", '.', '<eos>']
     ******
-    src =>  ['run', '!', '<eos>', '<pad>']
-    pred =>  ['<bos>', 'je', 'tricote', '.', '<eos>']
+    src =>  ['hug', 'me', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'je', 'conduisis', '.', '<eos>']
     ******
-    src =>  ['no', 'way', '!', '<eos>']
-    pred =>  ['<bos>', 'je', 'tricote', '.', '<eos>']
+    src =>  ['pull', 'it', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'enterrez', '-', 'la', '.', '<eos>']
     ******
-    src =>  ['be', 'fair', '.', '<eos>']
-    pred =>  ['<bos>', 'sois', 'sincère', '.', '<eos>']
+    src =>  ["i'm", 'ugly', '.', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'je', 'suis', 'laid', '.', '<eos>']
     ******
-    src =>  ['come', 'on', '.', '<eos>']
-    pred =>  ['<bos>', 'sois', 'sincère', '.', '<eos>']
+    src =>  ['help', 'me', '!', '<eos>', '<pad>']
+    pred =>  ['<bos>', 'je', 'me', 'suis', 'gagné', 'camp', 'essayer', '.', '<eos>']
     ******
 
