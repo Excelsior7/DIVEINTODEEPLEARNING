@@ -290,6 +290,41 @@ len(source_vocab), len(target_vocab)
 ***
 ### *ATTENTION*
 
+Here is a verbal summary of what I tried to say in pictures below:
+
+**DECODER**
+
+At each time step i in the decoder, the output of the decoder is a matrix (the hidden states (I use the plural because we are proceeding in batches) of time i of the last layer L) that can be seen as a set of rows so that each row is associated with the sequence that is on the same row in the batch. 
+
+Each of the rows of this matrix is a vector that is a kind of encoded summary (technically called "hidden state") of the respective sequence from token 1 to token i.
+
+**ENCODER**
+
+The output of the encoder consists of the hidden states for each time step of the last layer of the RNN.
+
+The same decomposition and analysis as in **DECODER** follows for each hidden state at different time steps.
+  
+
+**ATTENTION BAHDANAU**
+
+Now, the idea behind Bahdanau attention is an interaction (the interaction is determined by the choice of the scoring function) between the different rows of hidden states at time step i of the decoder with the rows lying at the same position of the different hidden states of the encoder (its output).
+
+More precisely, the first row of hidden states of the time step i of the decoder will interact with:
+- The first row of the first hidden states of the encoder.
+- The first row of the second hidden states of the encoder.
+- The first row of the third hidden states of the encoder.
+- etc...
+
+And identically for the other rows of the hidden states of the time step i of the decoder.
+
+**ATTENTION POOLING**
+
+Each interaction between two rows has for objective to give a similarity measure between these two rows. 
+
+The objective is to take a linear combination of the different rows at a given position so that a row counts in this linear combination proportionally to its similarity with the row of the decoder.
+
+The final objective is to concatenate these different linear combinations with the input of the decoder at time step i+1 (always respecting the positioning of each row) so that the decoder has a more accurate context, which can consequently produce more accurate predictions.  
+
 ![jpg](../plots/seq2seq_bahdanauAttention_ch11.jpg)
 
 ```python
