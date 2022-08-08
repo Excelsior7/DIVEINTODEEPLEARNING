@@ -133,7 +133,7 @@ values
 
 
 
-![png](../plots/attention_weights_multiHead_fig1.png)
+![png](../plots/MultiHead_fig1.png)
 
 ***
 
@@ -143,4 +143,4 @@ This last interaction will give rise to the different "heads" that will only nee
 
 Again, an image will help to understand better.
 
-![png](../plots/attention_weights_multiHead_fig2.png)
+![png](../plots/MultiHead_fig2.png)
